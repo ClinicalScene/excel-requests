@@ -47,6 +47,6 @@ Documentation is available at `http://excel-requests.pathio.com/en/latest/ <http
 License & Authors
 -----------------
 
-- This project is maintained by Bjoern Stiel at `Pathio.com <https://www.pathio.com>`_
-- Drop me an email `bjoern.stiel@pathio.com <mailto:bjoern.stiel@pathio.com>`_. or tweet me `@bjoernstiel <https://twitter.com/bjoernstiel>`_
+- This project is maintained by Bjoern Stiel at `ZoomerAnalytics.com <https://www.zoomeranalytics.com>`_
+- Drop me an email `bjoern.stiel@zoomeranalytics.com <mailto:bjoern.stiel@zoomeranalytics.com>`_.
 - This project is licensed under the terms of the `BSD license <https://opensource.org/licenses/BSD-3-Clause>`_
