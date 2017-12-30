@@ -1,5 +1,5 @@
-<DnaLibrary Name="RequestsTest Add-In" RuntimeVersion="v4.0">
-  <ExternalLibrary Path="RequestsTest.dll" LoadFromBytes="true" Pack="true" />
+<DnaLibrary Name="Requests Add-In" RuntimeVersion="v4.0">
+  <ExternalLibrary Path="Requests.dll" ExplicitExports="false" LoadFromBytes="true" Pack="true" />
   
   <!-- 
        The RuntimeVersion attribute above allows two settings:

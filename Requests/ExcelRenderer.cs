@@ -1,17 +1,13 @@
 ﻿using System;
 using Newtonsoft.Json.Linq;
+using Requests.Models;
 
 namespace Requests
 {
     public class ExcelRenderer
     {
-        private static string ConcatenatePath(string path, string part)
-        {
-            var delimiter = !path.Contains("#") ? "#" : "/";
-            return path + delimiter + part;
-        }
 
-        public static object Render(JToken token, string path, bool traverse)
+        public static object Render(JToken token, Route route, bool traverse)
         {
             if (token.Type == JTokenType.Integer)
                 return token.ToObject<int>();
@@ -31,7 +27,7 @@ namespace Requests
             if (token.Type == JTokenType.Array)
             {
                 if (!traverse)
-                    return path;
+                    return route.Render();
 
                 int columns = 1;
                 int rows = (token as JArray).Count;
@@ -52,19 +48,21 @@ namespace Requests
                         var j = 0;
                         foreach (var item in arr)
                         {
-                            array[i, j] = Render(item, ConcatenatePath(path, i + "/" + j), false);
+                            array[i, j] = Render(item, 
+                                new Route(route.MetaPrefix, route.Url, Route.Combine(route.Fragment, i + "/" + j)), false);
                             j++;
                         }
                     }
                     else
                     {
-                        array[i, 0] = Render((token as JArray)[i], ConcatenatePath(path, i.ToString()), false);
+                        array[i, 0] = Render((token as JArray)[i],
+                            new Route(route.MetaPrefix, route.Url, Route.Combine(route.Fragment, i.ToString())), false);
                     }
                 }
                 return array;
             }
 
-            return path;
+            return route.Render();
 
         }
     }

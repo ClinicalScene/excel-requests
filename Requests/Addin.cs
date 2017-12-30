@@ -2,83 +2,114 @@
 using System.Collections.Generic;
 using ExcelDna.Integration;
 using Requests.Providers;
-using Newtonsoft.Json.Linq;
+using Requests.Models;
+using NetOffice.ExcelApi;
+using System.Runtime.InteropServices;
+using Requests.UI;
 
 namespace Requests
 {
-    public static class Addin
+    [ComVisible(true)]
+    public class Addin: IExcelAddIn
     {
         private static Cache cache = new Cache();
         private static HttpProvider httpProvider = new HttpProvider();
+        private static Application application;
+        private static Workbook workbook;
+        private static string DefaultMetaPrefix = "__meta";
+
+        public void AutoOpen()
+        {
+            application = new Application(null, ExcelDnaUtil.Application);
+            application.WorkbookActivateEvent += Application_WorkbookActivate;
+        }
+
+        private void Application_WorkbookActivate(Workbook Wb)
+        {
+            workbook = Wb;
+            workbook.SheetBeforeRightClickEvent += Workbook_SheetBeforeRightClick;
+        }
+
+        private void Workbook_SheetBeforeRightClick(object Sh, Range Target, ref bool Cancel)
+        {
+            var caption = "Show Json...";
+            var contextMenu = application.CommandBars["Cell"];
+
+                var createControl = true;
+            var cellValue = Target.Cells[1, 1].Value?.ToString();
+            var showMenuControl = false;
+            if (Target.Cells.Count == 1 && cellValue != null)
+            {
+                showMenuControl = (cellValue as string).StartsWith("http://") || (cellValue as string).StartsWith("https://");
+            }
+
+            foreach (var control in contextMenu.Controls)
+            {
+                if (control.Caption == caption)
+                {
+                    if (!showMenuControl)
+                        control.Delete();
+                    else
+                        createControl = false;
+                }
+            }
+
+            if (!(createControl && showMenuControl))
+                return;
+
+            var v = Target.Value;
+            var menuItem = contextMenu.Controls.Add();
+            menuItem.Caption = caption;
+            menuItem.BeginGroup = true;
+            menuItem.OnAction = "ShowJson";
+        }
+
+
+        [ExcelCommand(Name = "ShowJson")]
+        public static void ShowJson()
+        {
+            var url = application.ActiveCell.Value.ToString();
+            var route = new Route(DefaultMetaPrefix, url, null);
+            var response = GetFromCache(route.Url);
+            var jToken = route.IsMeta ? response.Meta : response.Json;
+
+            var viewer = new JsonViewer(url, jToken);
+            viewer.Show();
+        }
+
+
+        public void AutoClose()
+        {
+        }
+
+
+        public static void GetFromSourceIfNotInCache(string url, object headers)
+        {
+            var httpHeaders = headers is ExcelMissing ?
+                new Dictionary<string, string>() :
+                ExcelParams.AsDictionary<string>(headers as object[,]);
+
+            if (!cache.ContainsKey(url))
+                cache.Set(url, httpProvider.Get(url, httpHeaders));
+        }
 
         [ExcelFunction(Name = "REQUESTS.GET")]
-        public static object HttpGet(string url, object query, object headers, object authentication, object timeout, object allowRedirects)
+        public static object Get(string url, object fragment, object headers, object timeout, object allowRedirects)
         {
-            if (ExcelDnaUtil.IsInFunctionWizard())
-                return "";
             try
             {
-                url = Schema.Trim(url);
+                fragment = fragment is ExcelMissing ? null : fragment;
+                var route = new Route(DefaultMetaPrefix, url, fragment);
 
-                var httpHeaders = headers is ExcelMissing ?
-                    new Dictionary<string, string>() :
-                    ExcelParams.AsDictionary<string>(headers as object[,]);
+                if (ExcelDnaUtil.IsInFunctionWizard() && !cache.ContainsKey(route.Url))
+                    return "";
 
-                if(!(authentication is ExcelMissing))
-                {
-                    var encoded = System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(authentication.ToString()));
-                    httpHeaders["Authorization"] = "Basic " + encoded;
-                }
+                GetFromSourceIfNotInCache(route.Url, headers);
 
-
-
-                if (!cache.ContainsKey(url))
-                    cache.Set(url, httpProvider.Get(url, httpHeaders));
-                return url;
-            }
-            catch(Exception e)
-            {
-                return e.Message;
-            }
-        }
-
-
-
-
-        [ExcelFunction(Name = "REQUESTS.POST")]
-        public static object HttpPost(string url, object query, object data, object headers, object authentication, object timeout, object allowRedirects)
-        {
-            if (ExcelDnaUtil.IsInFunctionWizard()) return "";
-            if (data is ExcelMissing) return ExcelError.ExcelErrorValue;
-
-            try
-            {
-                url = Schema.Trim(url);
-
-                var httpHeaders = headers is ExcelMissing ?
-                    new Dictionary<string, string>() :
-                    ExcelParams.AsDictionary<string>(headers as object[,]);
-
-                if (!(authentication is ExcelMissing))
-                {
-                    var encoded = System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(authentication.ToString()));
-                    httpHeaders["Authorization"] = "Basic " + encoded;
-                }
-
-                JToken payload = null;
-                if(data is string)
-                {
-                    var token = cache.Get(data as string);
-                    if (token != null)
-                        payload = token;
-                }
-
-                if(payload == null)
-                    payload = new JValue(data);
-
-                var response = httpProvider.Post(url, httpHeaders, payload);
-                cache.Set(url, response);
-                return url;
+                var response = GetFromCache(route.Url);
+                var jToken = route.IsMeta? JTokenAccessor.Get(response.Meta, route.Fragment) : JTokenAccessor.Get(response.Json, route.Fragment);
+                return ExcelRenderer.Render(jToken, route, true);
+                
             }
             catch (Exception e)
             {
@@ -87,23 +118,54 @@ namespace Requests
         }
 
 
-
-        /*
-        [ExcelFunction(Name = "REQUESTS.PUT")]
-        public static object HttpPut(string url, string payload, object headers)
+        [ExcelFunction(Name = "REQUESTS.LIST")]
+        public static object List(string url, object fragment, object headers, object timeout, object allowRedirects, object traverseObject)
         {
             try
             {
-                //dummy
-                return url;
+                fragment = fragment is ExcelMissing ? null : fragment;
+                var route = new Route(DefaultMetaPrefix, url, fragment);
+
+                if (ExcelDnaUtil.IsInFunctionWizard() && !cache.ContainsKey(route.Url))
+                    return "";
+
+                GetFromSourceIfNotInCache(route.Url, headers);
+
+                var response = GetFromCache(route.Url);
+                var jToken = route.IsMeta ? response.Meta : response.Json;
+                var properties = JTokenAccessor.Properties(jToken, route.Fragment);
+                var results = new object[properties.Count, 2];
+                for (int i = 0; i < properties.Count; i++)
+                {
+                    results[i, 0] = route.Url + "#" + (route.IsMeta? DefaultMetaPrefix + "/" : "") + properties[i].Path;
+                    results[i, 1] = properties[i].Type;
+                }
+                return results;
             }
             catch (Exception e)
             {
                 return e.Message;
             }
         }
-        */
 
+        [ExcelFunction(Name = "REQUESTS.TYPE")]
+        public static object Type(string url, object fragment, object headers, object authentication, object timeout, object allowRedirects)
+        {
+            try
+            {
+                fragment = fragment is ExcelMissing ? null : fragment;
+                var route = new Route(DefaultMetaPrefix, url, fragment);
+                if (ExcelDnaUtil.IsInFunctionWizard() && !cache.ContainsKey(route.Url))
+                    return "";
+                GetFromSourceIfNotInCache(route.Url, headers);
+                var value = GetFromCache(route.Url).Json;
+                return value.Type.ToString();
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+        }
 
         [ExcelFunction(Name = "REQUESTS.FLUSH")]
         public static object Flush(object keys)
@@ -132,91 +194,11 @@ namespace Requests
             }
         }
 
-
-
-        [ExcelFunction(Name = "REQUESTS.DICT.GET")]
-        public static object Get(string key, object property)
+        public static Response GetFromCache(string url)
         {
-            try
-            {
-                var url = property is ExcelMissing ? key : (key.Contains("#") ? key + "/" + property.ToString() : key + "#" + property.ToString());
-                var schema = new Schema(url);
-                var token = cache.Get(schema.Base);
-                if (schema.Path != null)
-                    token = Accessor.Get(token, schema.Path);
-
-                return ExcelRenderer.Render(token, schema.Url, true);
-            }
-            catch (Exception e)
-            {
-                return ExcelError.ExcelErrorNA;
-            }
+            var schema = new Schema(url);
+            return cache.Get(schema.Base);
         }
 
-
-        [ExcelFunction(Name = "REQUESTS.DICT.CREATE")]
-        public static object Create(string key)
-        {
-            var token = new JObject();
-            cache.Set(key, token);
-            return key;
-        }
-
-
-
-        [ExcelFunction(Name = "REQUESTS.DICT.SET")]
-        public static object Set(string key, object property, object value)
-        {
-            try
-            {
-                var url = property is ExcelMissing ? key : (key.Contains("#") ? key + "/" + property.ToString() : key + "#" + property.ToString());
-                var schema = new Schema(url);
-                var token = cache.Get(schema.Base);
-
-                var jValue = new JValue(value);
-                if (schema.Path != null)
-                    token = Accessor.Set(token, schema.Path, jValue);
-
-                return schema.Url;
-            }
-            catch (Exception e)
-            {
-                return e.Message;
-            }
-        }
-
-
-
-
-
-
-
-        [ExcelFunction(Name = "REQUESTS.DICT.KEYS")]
-        public static object Keys(string key)
-        {
-            try
-            {
-                var schema = new Schema(key);
-                var token = cache.Get(schema.Base);
-                if (schema.Path != null)
-                    token = Accessor.Get(token, schema.Path);
-
-                var properties = Accessor.Properties(token);
-                if(properties.Count == 0)
-                {
-                    return ExcelError.ExcelErrorNA;
-                }
-                var result = new string[properties.Count, 1];
-                for (var i = 0; i < properties.Count; i++)
-                    result[i, 0] = properties[i];
-                return result;
-
-            }
-            catch (Exception e)
-            {
-                return e.Message;
-            }
-        }
     }
-
 }

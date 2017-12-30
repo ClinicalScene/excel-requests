@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using Requests.Providers;
+using Requests.Models;
 
 namespace Requests
 {
     public class Cache
     {
-        private Dictionary<string, JToken> objects = new Dictionary<string, JToken>();
+        private Dictionary<string, Response> objects = new Dictionary<string, Response>();
         private HttpProvider httpProvider = new HttpProvider();
 
 
@@ -30,8 +31,8 @@ namespace Requests
 
         public void Flush(string key)
         {
-            if(objects.ContainsKey(key))
-                objects[key].Remove();
+            if (objects.ContainsKey(key))
+                objects.Remove(key);
         }
 
         public bool ContainsKey(string key)
@@ -40,15 +41,15 @@ namespace Requests
         }
 
 
-        public JToken Get(string key)
+        public Response Get(string key)
         {
             return objects[key];
         }
 
-        public JToken Set(string key, JToken token)
+        public Response Set(string key, Response response)
         {
-            objects[key] = token;
-            return token;
+            objects[key] = response;
+            return response;
         }
 
 

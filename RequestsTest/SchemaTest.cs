@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NUnit.Framework;
-using Requests;
+﻿using NUnit.Framework;
 
-namespace Request.Test
+
+namespace Requests.Test
 {
-    class SchemaTest
+    class SchemaTests
     {
         [Test]
-        public void Can_Parse_Url_Without_Hash()
+        public void CanParseUrlWithoutHash()
         {
             var url = "http://api.test.com/";
             var schema = new Schema(url);
@@ -21,7 +16,7 @@ namespace Request.Test
 
 
         [Test]
-        public void Can_Parse_Url_With_Hash()
+        public void CanParseUrlWithHash()
         {
             var url = "http://api.test.com#path/to/thingy";
             var schema = new Schema(url);

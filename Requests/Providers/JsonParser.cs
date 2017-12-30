@@ -3,7 +3,7 @@
 
 namespace Requests
 {
-    public class Parser
+    public class JsonParser
     {
         public static JToken Parse(string json)
         {
