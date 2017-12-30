@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requests", "Requests\Requests.csproj", "{CC341EA6-DA2B-4135-8786-E02AFB54EFEA}"
 EndProject
@@ -17,9 +17,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		docs\install.ps1 = docs\install.ps1
 		docs\installation.rst = docs\installation.rst
 		LICENSE.txt = LICENSE.txt
-		docs\post.rst = docs\post.rst
 		docs\quickstart.rst = docs\quickstart.rst
 		README.rst = README.rst
+		docs\udfs.png = docs\udfs.png
 	EndProjectSection
 EndProject
 Global
@@ -39,5 +39,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BA8034D4-0F07-4DFF-A972-F663066446AB}
 	EndGlobalSection
 EndGlobal
