@@ -12,11 +12,11 @@ before_build:
 build_script:
 - cmd: msbuild /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /p:Configuration=Release
 after_build:
-- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.33.9\tools\ExcelDna.xll" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests.xll*" /C /Y
+- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.34.6\tools\ExcelDna.xll" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests.xll*" /C /Y
 - cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests.dna" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests64.dna*" /C /Y
-- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.33.9\tools\ExcelDna64.xll" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests64.xll*" /C /Y
-- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.33.9\tools\ExcelDnaPack.exe" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests.dna" /Y
-- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.33.9\tools\ExcelDnaPack.exe" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests64.dna" /Y
+- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.34.6\tools\ExcelDna64.xll" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests64.xll*" /C /Y
+- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.34.6\tools\ExcelDnaPack.exe" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests.dna" /Y
+- cmd: xcopy "%APPVEYOR_BUILD_FOLDER%\packages\ExcelDna.AddIn.0.34.6\tools\ExcelDnaPack.exe" "%APPVEYOR_BUILD_FOLDER%\Requests\bin\Release\Requests64.dna" /Y
 - ps: Get-ChildItem .\*.xll | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 - appveyor PushArtifact Requests\bin\Release\Requests-packed.xll -FileName Requests.xll -DeploymentName Requests.xll
 - appveyor PushArtifact Requests\bin\Release\Requests64-packed.xll -FileName Requests64.xll -DeploymentName Requests64.xll
